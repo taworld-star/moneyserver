@@ -1,4 +1,5 @@
 
+import 'dart:convert';
 import 'package:moneyserver/data/model/transaction.dart';
 
 class GetAllTransactionsResponse {
@@ -21,9 +22,14 @@ class GetAllTransactionsResponse {
         ),
       );
 
+  factory GetAllTransactionsResponse.fromJson(String str) =>
+      GetAllTransactionsResponse.fromMap(json.decode(str));
+
   Map<String, dynamic> toMap() => {
     "status": status,
     "message": message,
     "data": List<dynamic>.from(data.map((x) => x.toMap())),
   };
+
+  String toJson() => json.encode(toMap());
 }
