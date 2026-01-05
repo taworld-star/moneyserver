@@ -1,4 +1,4 @@
-import 'dart:nativewrappers/_internal/vm/lib/developer.dart';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:moneyserver/data/model/transaction.dart';
@@ -29,7 +29,7 @@ class _HomepageState extends State<Homepage> {
   Future<void> _loadData() async {
     try{
       final response = await _transactionRepo.getTransaction();
-      if (response.status == 'succes'){
+      if (response.status == 'success'){
         setState(() {
           _transactions = response.data;
         });

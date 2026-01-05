@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -39,26 +40,60 @@ class _InsertPageState extends State<InsertPage> {
 
   Future<void> _loadCategories() async {
     try {
-      final response = await categoryRepo.getAllCategories();
-      log('Categories Response: ${response.toJson()}');
-      if (response.status == 'success') {
+      log('Starting to load categories...');
+      
+      // Add timeout 10 detik
+      final response = await categoryRepo.getAllCategories().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw TimeoutException('Timeout loading categories'),
+      );
+      
+      log('Response status: ${response.status}');
+      log('Response message: ${response.message}');
+      log('Categories count: ${response.data.length}');
+      
+      if (response.status == 'success' && response.data.isNotEmpty) {
         setState(() {
           categoryResponse = response;
         });
-      } else {
+        log('Categories loaded successfully: ${response.data.map((c) => c.name).toList()}');
+      } else if (response.status == 'success' && response.data.isEmpty) {
+        log('No categories found');
         if (mounted) {
-          log('Failed to load categories: ${response.message}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Belum ada kategori di server')),
+          );
+        }
+      } else {
+        log('Failed to load categories: ${response.message}');
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Gagal memuat kategori: ${response.message}'),
+              content: Text('Gagal memuat kategori:\n${response.message}'),
+              duration: const Duration(seconds: 5),
             ),
           );
         }
       }
-    } catch (e) {
+    } on TimeoutException catch (e) {
+      log('Timeout: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: const Text('Timeout: Server tidak merespons\nPastikan server berjalan di 192.168.1.17:8000'),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      log('Error loading categories: $e');
+      log('Stack trace: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }
@@ -143,24 +178,32 @@ class _InsertPageState extends State<InsertPage> {
           key: _formKey,
           child: ListView(
             children: [
-              DropdownButtonFormField<int>(
-                value: selectedCategoryId,
-                items: (categoryResponse?.data ?? [])
-                    .map(
-                      (cat) => DropdownMenuItem(
-                        value: cat.id,
-                        child: Text(cat.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) {
-                  setState(() {
-                    selectedCategoryId = v;
-                  });
-                },
-                decoration: const InputDecoration(labelText: 'Kategori'),
-                validator: (v) => v == null ? 'Pilih kategori' : null,
-              ),
+              if (categoryResponse == null)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else
+                DropdownButtonFormField<int>(
+                  value: selectedCategoryId,
+                  items: (categoryResponse?.data ?? [])
+                      .map(
+                        (cat) => DropdownMenuItem(
+                          value: cat.id,
+                          child: Text(cat.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      selectedCategoryId = v;
+                    });
+                  },
+                  decoration: const InputDecoration(labelText: 'Kategori'),
+                  validator: (v) => v == null ? 'Pilih kategori' : null,
+                ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _descCtrl,
