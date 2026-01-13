@@ -15,7 +15,7 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   double _balance =0;
-  double _income =0;
+  String _income = '0';
   double _expense =0;
   final _transactionRepo = TransactionRepository(HttpService());
   List<Transaction> _transactions = [];
@@ -24,6 +24,7 @@ class _HomepageState extends State<Homepage> {
   void initState(){
     super.initState();
     _loadData();
+    _loadIncome();
   }
 
   Future<void> _loadData() async {
@@ -48,6 +49,15 @@ class _HomepageState extends State<Homepage> {
           context,
         ).showSnackBar(SnackBar(content: Text('Error:$e')));
       }
+    }
+  }
+
+  Future<void> _loadIncome() async {
+    final response = await _transactionRepo.getIncome();
+    if (response.status == "success"){
+      setState(() {
+        _income = response.data.totalIncome;
+      });
     }
   }
   @override
@@ -114,7 +124,7 @@ class _HomepageState extends State<Homepage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Income: Rp${_income.toStringAsFixed(0)}',
+                  'Income: Rp${_income}',
                   style: const TextStyle(color:Colors.green, fontSize: 16),
                 ),
                 Text(

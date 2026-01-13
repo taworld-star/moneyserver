@@ -2,6 +2,7 @@ import 'package:moneyserver/data/service/httpservice.dart';
 import 'package:moneyserver/data/usecase/request/add_transaction_request.dart';
 import 'package:moneyserver/data/usecase/response/get_transactions_response.dart';
 import 'package:moneyserver/data/usecase/response/get_all_transactions_response.dart';
+import 'package:moneyserver/data/usecase/response/get_income_response.dart';
 
 class TransactionRepository {
   final HttpService apiService;
@@ -44,6 +45,21 @@ class TransactionRepository {
       }
     } catch (e) {
       throw Exception('Error creating transaction: $e');
+    }
+  }
+
+  Future<GetIncomeResponse> getIncome() async {
+    final response = await apiService.get('transactions/income');
+    try {
+      if (response.statusCode == 200) {
+        final responseData = GetIncomeResponse.fromJson(response.body);
+        return responseData;
+      } else {
+        final errorResponse = GetIncomeResponse.fromJson(response.body);
+        return errorResponse;
+      }
+    } catch (e) {
+      throw Exception('Error parsing income: $e');
     }
   }
 }
